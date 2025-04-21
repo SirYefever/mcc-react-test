@@ -10,6 +10,36 @@
   align-items: flex-start;
 }
 
-.ico {
+.node-span {
+  cursor: default;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.selected-node-span {
+  background-color: lightgray;
+  cursor: default;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.node-span:hover {
+  background: #efefef;
+}
+
+.folder-ico {
   width: 24px;
+  height: 24px;
+}
+
+.my-btn {
+  color: black;
+  border: none;
+  background: none;
+}
+
+.file-name {
+  max-height: 8px;
 }

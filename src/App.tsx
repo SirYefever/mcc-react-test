@@ -6,18 +6,23 @@ import {useState} from "react";
 import {ShevronDown} from "./components/ShevronDown.tsx";
 
 type Folder = {
+      id: number;
       name: string;
       contents?: Folder[];
 }
 
 const folders: Folder[] = [
       {
+            id: 0,
             name: "Pictures",
             contents: [{
+                  id: 3,
                   name: "2010s",
                   contents: [{
+                        id: 1,
                         name: "2011s",
                         contents: [{
+                              id: 2,
                               name: "2012s",
                               contents: []
                         }]
@@ -25,9 +30,11 @@ const folders: Folder[] = [
             }]
       },
       {
+            id: 4,
             name: "Movies",
             contents: [
                   {
+                        id: 5,
                         name: "The.Wire.S04E09.720p.Eng.mkv"
                   }
             ]
@@ -36,41 +43,63 @@ const folders: Folder[] = [
 ]
 
 function App() {
+      const [selectedIds, setSelectedIds] = useState(new Set<number>());
+
+      const handleSelect = (id: number) => {
+            setSelectedIds(prev => {
+                  const newSet = new Set(prev);
+                  if (newSet.has(id)) {
+                        newSet.delete(id);
+                  } else {
+                        newSet.add(id);
+                  }
+                  return newSet;
+            });
+            console.log(selectedIds);
+      };
+
       return (
           <ul className={"tree"}>
                 {folders.map((folder: Folder) => (
-                      <Folder folder={folder} />
+                      <Folder folder={folder} handleSelect={handleSelect} />
                 ))}
           </ul>
   )
 }
 
-function Folder({folder}: {folder: Folder}) {
-      let [isExpanded, setExpanded] = useState(false);
-
+function Folder({folder, handleSelect}: {folder: Folder, handleSelect: (id: number) => void}) {
+      const [isExpanded, setExpanded] = useState(false);
       const expand = () => setExpanded(!isExpanded);
+
+      const [isSelected, setSelected] = useState(false);
+      const select = () => {
+            setSelected(!isSelected);
+            handleSelect(folder.id);
+      }
 
       return (
           <li className={"tree-node"} key={folder.name}>
-                <span onClick={expand} >
+                <span className={ isSelected ? ("selected-node-span") : ("node-span")} >
                       {folder.contents ? (
                           <>
-                                {isExpanded ? (
-                                    <ShevronDown />
-                                ) : (
-                                    <ShevronRight />
-                                )}
-                                <img alt={"📁"} src={folderIco} className={"ico"}/>
+                                <button className={"my-btn"} onClick={expand}>
+                                      {isExpanded ? (
+                                          <ShevronDown />
+                                      ) : (
+                                          <ShevronRight />
+                                      )}
+                                </button>
+                                <img alt={"📁"} src={folderIco} className={"folder-ico"}/>
                           </>
                       ) : (
-                          <img alt={"🗎"} src={fileIco} className={"ico"}/>
+                          <img alt={"🗎"} src={fileIco} className={"folder-ico"}/>
                       )}
-                      {folder.name}
+                      <p className={"file-name"} onClick={select}>{folder.name}</p>
           </span>
                 {isExpanded && (
                     <ul>
                           {folder.contents?.map(folder => (
-                              <Folder folder={folder}/>
+                              <Folder folder={folder} handleSelect={handleSelect} />
                           ))}
                     </ul>
                 )}
