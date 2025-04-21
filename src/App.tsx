@@ -11,7 +11,7 @@ type Folder = {
       contents?: Folder[];
 }
 
-const folders: Folder[] = [
+const foldersInitial: Folder[] = [
       {
             id: 0,
             name: "Pictures",
@@ -44,6 +44,11 @@ const folders: Folder[] = [
 
 function App() {
       const [selectedIds, setSelectedIds] = useState(new Set<number>());
+      const [folders, setFolders] = useState<Folder[]>(foldersInitial);
+
+      const setFoldersNested = (folders: Folder[]) => {
+
+      };
 
       const handleSelect = (id: number) => {
             setSelectedIds(prev => {
@@ -55,19 +60,32 @@ function App() {
                   }
                   return newSet;
             });
-            console.log(selectedIds);
       };
 
+      const handleRemove = () => {
+            selectedIds.forEach(id =>{
+                  setFolders(folders.filter(folder => folder.id === id));
+                  setFoldersNested(folders.filter(folder => folder.id === id));
+                }
+            );
+
+      }
+
       return (
-          <ul className={"tree"}>
-                {folders.map((folder: Folder) => (
-                      <Folder folder={folder} handleSelect={handleSelect} />
-                ))}
-          </ul>
-  )
+          <>
+                <ul className={"tree"}>
+                      {folders.map((folder: Folder) => (
+                          <Folder folder={folder} handleSelect={handleSelect}/>
+                      ))}
+                </ul>
+                <div className={"buttons-div"}>
+                      <button onClick={handleRemove} className={"my-btn"}>Remove</button>
+                </div>
+          </>
+      )
 }
 
-function Folder({folder, handleSelect}: {folder: Folder, handleSelect: (id: number) => void}) {
+function Folder({folder, handleSelect}: { folder: Folder, handleSelect: (id: number) => void }) {
       const [isExpanded, setExpanded] = useState(false);
       const expand = () => setExpanded(!isExpanded);
 
@@ -78,7 +96,7 @@ function Folder({folder, handleSelect}: {folder: Folder, handleSelect: (id: numb
       }
 
       return (
-          <li className={"tree-node"} key={folder.name}>
+          <li className={"tree-node"} key={folder.id}>
                 <span className={ isSelected ? ("selected-node-span") : ("node-span")} >
                       {folder.contents ? (
                           <>
