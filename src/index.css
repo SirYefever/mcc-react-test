@@ -1,0 +1,15 @@
+.tree {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.tree-node {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.ico {
+  width: 24px;
+}
