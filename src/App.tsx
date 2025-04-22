@@ -35,20 +35,26 @@ const foldersInitial: Folder[] = [
             contents: [
                   {
                         id: 5,
-                        name: "The.Wire.S04E09.720p.Eng.mkv"
+                        name: "The.Wire.S04E09.720p.Eng.mkv",
+                        contents: []
                   }
             ]
       },
 
 ]
 
+function DeleteFolderRecursively(folders: Folder[], idToRemove: number): Folder[] {
+      return folders
+          .filter(f => f.id !== idToRemove)
+          .map(f => ({
+                ...f,
+                contents: f.contents ? DeleteFolderRecursively(f.contents, idToRemove) : undefined
+          }))
+}
+
 function App() {
       const [selectedIds, setSelectedIds] = useState(new Set<number>());
       const [folders, setFolders] = useState<Folder[]>(foldersInitial);
-
-      const setFoldersNested = (folders: Folder[]) => {
-
-      };
 
       const handleSelect = (id: number) => {
             setSelectedIds(prev => {
@@ -63,12 +69,9 @@ function App() {
       };
 
       const handleRemove = () => {
-            selectedIds.forEach(id =>{
-                  setFolders(folders.filter(folder => folder.id === id));
-                  setFoldersNested(folders.filter(folder => folder.id === id));
-                }
-            );
-
+            selectedIds.forEach((id) => {
+                  setFolders(prev => DeleteFolderRecursively(prev, id));
+            })
       }
 
       return (
