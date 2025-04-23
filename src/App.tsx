@@ -2,8 +2,9 @@ import folderIco from './resources/folder.png';
 import fileIco from './resources/file.png';
 import './index.css'
 import {ShevronRight} from "./components/ShevronRight.tsx";
-import {useState} from "react";
+import {ChangeEvent, useState} from "react";
 import {ShevronDown} from "./components/ShevronDown.tsx";
+import {Modal} from "./components/Modal.tsx";
 
 type Folder = {
       id: number;
@@ -43,6 +44,26 @@ const foldersInitial: Folder[] = [
 
 ]
 
+function GetFolderRecursively(folders: Folder[], idToGet: number): Folder | null {
+      let result: Folder | null = null;
+      for (let i = 0; i < folders.length; i++) {
+            const currentFolder = folders[i];
+
+            if (currentFolder.id === idToGet) {
+                  return currentFolder;
+            } else {
+                  if (currentFolder.contents){
+                        result = GetFolderRecursively(currentFolder.contents, idToGet);
+                  }
+
+                  if (result){
+                        return result;
+                  }
+            }
+      }
+      return null;
+}
+
 function DeleteFolderRecursively(folders: Folder[], idToRemove: number): Folder[] {
       return folders
           .filter(f => f.id !== idToRemove)
@@ -55,6 +76,8 @@ function DeleteFolderRecursively(folders: Folder[], idToRemove: number): Folder[
 function App() {
       const [selectedIds, setSelectedIds] = useState(new Set<number>());
       const [folders, setFolders] = useState<Folder[]>(foldersInitial);
+      const [idIterator, setIdIterator] = useState(6);
+      const [isModalOpen, setIsModalOpen] = useState(false);
 
       const handleSelect = (id: number) => {
             setSelectedIds(prev => {
@@ -74,14 +97,50 @@ function App() {
             })
       }
 
+      const toggleModal = () => {
+            setIsModalOpen(!isModalOpen);
+      }
+
+      const [inputString, setInputString] = useState<string>("");
+
+      const onInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+            setInputString(event.target.value);
+      }
+
+      const onSave = () => {
+            const selectedId = [...selectedIds][0];
+            const elementToAppend = GetFolderRecursively(folders, selectedId);
+            if (elementToAppend) {
+                  if (elementToAppend.contents){
+                        elementToAppend.contents.push({
+                              id: idIterator,
+                              contents: undefined,
+                              name: inputString
+                        })
+                  } else {
+                        elementToAppend.contents = [{
+                              id: idIterator,
+                              contents: undefined,
+                              name: inputString
+                        }]
+                  }
+                  setFolders(folders);
+                  setIdIterator(prev => prev+1);
+                  toggleModal();
+            }
+      }
+
+
       return (
           <>
+                <Modal inputValue={inputString} onInputChange={onInputChange} onSave={onSave} isOpen={isModalOpen} setIsOpen={setIsModalOpen} />
                 <ul className={"tree"}>
                       {folders.map((folder: Folder) => (
                           <Folder folder={folder} handleSelect={handleSelect}/>
                       ))}
                 </ul>
                 <div className={"buttons-div"}>
+                      <button onClick={toggleModal} className={selectedIds.size === 1 ? ("my-btn") : ("my-inactive-btn my-btn")}>Add</button>
                       <button onClick={handleRemove} className={"my-btn"}>Remove</button>
                 </div>
           </>
