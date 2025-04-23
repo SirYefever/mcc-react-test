@@ -9,7 +9,6 @@ type ModalProps = {
 }
 
 export function Modal(props: ModalProps) {
-      // const [isOpen, setIsOpen] = useState(true);
 
       const onClose = () => {
             props.setIsOpen(false);

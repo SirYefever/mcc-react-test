@@ -12,6 +12,11 @@ type Folder = {
       contents?: Folder[];
 }
 
+enum ActionMethod {
+      Add,
+      Edit
+}
+
 const foldersInitial: Folder[] = [
       {
             id: 0,
@@ -78,6 +83,7 @@ function App() {
       const [folders, setFolders] = useState<Folder[]>(foldersInitial);
       const [idIterator, setIdIterator] = useState(6);
       const [isModalOpen, setIsModalOpen] = useState(false);
+      const [actionMethod, setActionMethod] = useState<ActionMethod>(ActionMethod.Add);
 
       const handleSelect = (id: number) => {
             setSelectedIds(prev => {
@@ -97,7 +103,13 @@ function App() {
             })
       }
 
-      const toggleModal = () => {
+      const toggleModalAdd = () => {
+            setActionMethod(ActionMethod.Add);
+            setIsModalOpen(!isModalOpen);
+      }
+
+      const toggleModalEdit = () => {
+            setActionMethod(ActionMethod.Edit);
             setIsModalOpen(!isModalOpen);
       }
 
@@ -107,9 +119,20 @@ function App() {
             setInputString(event.target.value);
       }
 
-      const onSave = () => {
-            const selectedId = [...selectedIds][0];
-            const elementToAppend = GetFolderRecursively(folders, selectedId);
+      const addNewFolder = (id: number) => {
+            if (id === undefined) {
+                  folders.push({
+                        id: idIterator,
+                        contents: undefined,
+                        name: inputString
+                  })
+                  setFolders(folders);
+                  setIdIterator(prev => prev+1);
+                  toggleModalAdd();
+                  return;
+            }
+
+            const elementToAppend = GetFolderRecursively(folders, id);
             if (elementToAppend) {
                   if (elementToAppend.contents){
                         elementToAppend.contents.push({
@@ -126,8 +149,33 @@ function App() {
                   }
                   setFolders(folders);
                   setIdIterator(prev => prev+1);
-                  toggleModal();
+                  toggleModalAdd();
             }
+      };
+
+      const editFolder = (id: number) => {
+            const elementToEdit = GetFolderRecursively(folders, id);
+            if (elementToEdit) {
+                  elementToEdit.name = inputString;
+            }
+            setFolders(folders);
+            toggleModalAdd();
+      }
+
+      const onSave = () => {
+            const selectedId = [...selectedIds][0];
+            switch (actionMethod) {
+                  case ActionMethod.Add:
+                        addNewFolder(selectedId);
+                        break;
+
+                  case ActionMethod.Edit:
+                        editFolder(selectedId);
+            }
+      }
+
+      const handleReset = () => {
+
       }
 
 
@@ -136,12 +184,18 @@ function App() {
                 <Modal inputValue={inputString} onInputChange={onInputChange} onSave={onSave} isOpen={isModalOpen} setIsOpen={setIsModalOpen} />
                 <ul className={"tree"}>
                       {folders.map((folder: Folder) => (
-                          <Folder folder={folder} handleSelect={handleSelect}/>
+                          <Folder folder={folder} handleSelect={handleSelect} key={folder.id} />
                       ))}
                 </ul>
                 <div className={"buttons-div"}>
-                      <button onClick={toggleModal} className={selectedIds.size === 1 ? ("my-btn") : ("my-inactive-btn my-btn")}>Add</button>
+                      <button onClick={toggleModalAdd}
+                              className={(selectedIds.size === 1 || selectedIds.size === 0) ? ("my-btn") : ("my-inactive-btn my-btn")}>Add
+                      </button>
                       <button onClick={handleRemove} className={"my-btn"}>Remove</button>
+                      <button onClick={toggleModalEdit}
+                              className={selectedIds.size === 1 ? ("my-btn") : ("my-inactive-btn my-btn")}>Edit
+                      </button>
+                      <button onClick={handleReset} className={"my-btn"}>Reset</button>
                 </div>
           </>
       )
@@ -158,7 +212,7 @@ function Folder({folder, handleSelect}: { folder: Folder, handleSelect: (id: num
       }
 
       return (
-          <li className={"tree-node"} key={folder.id}>
+          <li className={"tree-node"} >
                 <span className={ isSelected ? ("selected-node-span") : ("node-span")} >
                       {folder.contents ? (
                           <>
@@ -179,7 +233,7 @@ function Folder({folder, handleSelect}: { folder: Folder, handleSelect: (id: num
                 {isExpanded && (
                     <ul>
                           {folder.contents?.map(folder => (
-                              <Folder folder={folder} handleSelect={handleSelect} />
+                              <Folder folder={folder} handleSelect={handleSelect} key={folder.id} />
                           ))}
                     </ul>
                 )}
