@@ -1,24 +1,9 @@
-import folderIco from './resources/folder.png';
-import fileIco from './resources/file.png';
 import './index.css'
-import {ShevronRight} from "./components/ShevronRight.tsx";
 import {ChangeEvent, useEffect, useState} from "react";
-import {ShevronDown} from "./components/ShevronDown.tsx";
 import {Modal} from "./components/Modal.tsx";
+import {Folder} from "./components/Folder.tsx";
 
-type Folder = {
-      id: number;
-      name: string;
-      contents?: Folder[];
-}
 
-type FolderProps = {
-      folder: Folder;
-      handleSelect: (id: number) => void;
-      selectedIds: Set<number>;
-      setExpanded: (id: number) => void;
-      expandedFolderIds: Set<number>;
-}
 
 enum ActionMethod {
       Add,
@@ -160,7 +145,7 @@ function DeleteFolderRecursively(folders: Folder[], idToRemove: number): Folder[
 
 function App() {
       const [folders, setFolders] = useState<Folder[]>(foldersInitial);
-      const [idIterator, setIdIterator] = useState(6);
+      const [idIterator, setIdIterator] = useState(22);
       const [isModalOpen, setIsModalOpen] = useState(false);
       const [actionMethod, setActionMethod] = useState<ActionMethod>(ActionMethod.Add);
       const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
@@ -194,37 +179,32 @@ function App() {
       }
 
       const addNewFolder = (id: number) => {
-            if (id === undefined) {
-                  setFolders(prevFolders => {
-                        const newFolder = {
-                              id: idIterator,
-                              contents: undefined,
-                              name: inputString
-                        };
-                        return [...prevFolders, newFolder];
-                  });
-                  setIdIterator(prev => prev + 1);
-                  toggleModalAdd();
-                  return;
-            }
+            console.log("add called.");
 
             setFolders(prevFolders => {
-                  const elementToAppend = GetFolderRecursively(prevFolders, id);
-                  if (elementToAppend) {
-                        const newFolder = {
-                              id: idIterator,
-                              contents: undefined,
-                              name: inputString
-                        };
-                        if (elementToAppend.contents) {
-                              elementToAppend.contents = [...elementToAppend.contents, newFolder];
-                        } else {
-                              elementToAppend.contents = [newFolder];
+                  const newFolder = {
+                        id: idIterator,
+                        contents: undefined,
+                        name: inputString
+                  };
+
+                  let updatedFolders = [...prevFolders];
+
+                  if (id === undefined) {
+                        updatedFolders = [...updatedFolders, newFolder];
+                  } else {
+                        const elementToAppend = GetFolderRecursively(updatedFolders, id);
+                        if (elementToAppend) {
+                              if (elementToAppend.contents) {
+                                    elementToAppend.contents = [...elementToAppend.contents, newFolder];
+                              } else {
+                                    elementToAppend.contents = [newFolder];
+                              }
                         }
-                        return [...prevFolders];
                   }
-                  return prevFolders;
+                  return updatedFolders;
             });
+
             setIdIterator(prev => prev + 1);
             toggleModalAdd();
       };
@@ -250,6 +230,7 @@ function App() {
 
                   case ActionMethod.Edit:
                         editFolder(selectedId);
+                        break;
             }
       }
 
@@ -317,45 +298,5 @@ function App() {
       )
 }
 
-function Folder(props: FolderProps) {
-      const isExpanded = props.expandedFolderIds.has(props.folder.id);
-      const expand = () => {
-            props.setExpanded(props.folder.id);
-      }
-
-      const isSelected = props.selectedIds.has(props.folder.id);
-      const select = () => {
-            props.handleSelect(props.folder.id);
-      }
-
-      return (
-          <li className={"tree-node"} >
-                <span className={ isSelected ? ("selected-node-span") : ("node-span")} >
-                      {props.folder.contents ? (
-                          <>
-                                <button className={"my-btn"} onClick={expand}>
-                                      {isExpanded ? (
-                                          <ShevronDown />
-                                      ) : (
-                                          <ShevronRight />
-                                      )}
-                                </button>
-                                <img alt={"📁"} src={folderIco} className={"folder-ico"}/>
-                          </>
-                      ) : (
-                          <img alt={"🗎"} src={fileIco} className={"folder-ico"}/>
-                      )}
-                      <p className={"file-name"} onClick={select}>{props.folder.name}</p>
-          </span>
-                {isExpanded && (
-                    <ul>
-                          {props.folder.contents?.map(folder => (
-                              <Folder folder={folder} key={folder.id} handleSelect={props.handleSelect} selectedIds={props.selectedIds} setExpanded={props.setExpanded} expandedFolderIds={props.expandedFolderIds} />
-                          ))}
-                    </ul>
-                )}
-          </li>
-      )
-}
 
 export default App
