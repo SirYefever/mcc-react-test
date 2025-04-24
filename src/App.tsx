@@ -2,7 +2,7 @@ import folderIco from './resources/folder.png';
 import fileIco from './resources/file.png';
 import './index.css'
 import {ShevronRight} from "./components/ShevronRight.tsx";
-import {ChangeEvent, useState} from "react";
+import {ChangeEvent, useEffect, useState} from "react";
 import {ShevronDown} from "./components/ShevronDown.tsx";
 import {Modal} from "./components/Modal.tsx";
 
@@ -15,6 +15,7 @@ type Folder = {
 type FolderProps = {
       folder: Folder;
       handleSelect: (id: number) => void;
+      selectedIds: Set<number>;
       setExpanded: (id: number) => void;
       expandedFolderIds: Set<number>;
 }
@@ -30,26 +31,98 @@ const foldersInitial: Folder[] = [
             name: "Pictures",
             contents: [{
                   id: 1,
-                  name: "2010s",
-                  contents: [{
-                        id: 2,
-                        name: "2011s",
-                        contents: [{
-                              id: 3,
-                              name: "2012s",
-                              contents: []
-                        }]
-                  }]
+                  name: "2025",
+                  contents: [
+                        {
+                              id:17,
+                              name: "IMG_20250307_114534.jpg",
+                              contents: undefined,
+                        },
+                        {
+                              id:18,
+                              name: "IMG_20250307_114549.jpg",
+                              contents: undefined,
+                        },
+                        {
+                              id:19,
+                              name: "IMG_20250307_114551.jpg",
+                              contents: undefined,
+                        },
+                        {
+                              id:20,
+                              name: "IMG_20250307_114555.jpg",
+                              contents: undefined,
+                        }
+                  ]
             }]
       },
       {
             id: 4,
-            name: "Movies",
+            name: "Videos",
             contents: [
                   {
                         id: 5,
-                        name: "The.Wire.S04E09.720p.Eng.mkv",
-                        contents: []
+                        name: "Movies",
+                        contents: [
+                              {
+                                    id: 6,
+                                    name: "The.Wire.Complete.Series.720p.BluRay.2xRus.Eng.E180",
+                                    contents: [
+                                          {
+                                                id: 7,
+                                                name: "The.Wire.S04E09.720p.BluRay.2xRus.Eng.E180.mkv",
+                                                contents: undefined,
+                                          },
+                                          {
+                                                id: 8,
+                                                name: "The.Wire.S04E10.720p.BluRay.2xRus.Eng.E180.mkv",
+                                                contents: undefined,
+                                          },
+                                          {
+                                                id: 9,
+                                                name: "The.Wire.S04E11.720p.BluRay.2xRus.Eng.E180.mkv",
+                                                contents: undefined,
+                                          },
+                                          {
+                                                id: 10,
+                                                name: "The.Wire.S04E12.720p.BluRay.2xRus.Eng.E180.mkv",
+                                                contents: undefined,
+                                          },
+                                    ]
+                              },
+                              {
+                                    id: 15,
+                                    name: "Intouchables 2011.mkv",
+                                    contents: undefined,
+                              },
+                              {
+                                    id: 16,
+                                    name: "Шрек 5 трейлер.mkv",
+                                    contents: undefined,
+                              }
+                        ]
+                  },
+                  {
+                        name: "OBS",
+                        id: 11,
+                        contents: [
+                              {
+                                    name: "2024-03-27 03-45-48.mp4",
+                                    id: 12,
+                                    contents: undefined,
+                              },
+                              {
+                                    name: "2023-10-20 02-51-15 — копия.mkv",
+                                    id: 13,
+                                    contents: undefined,
+                              },
+                              {
+                                    name: "2024-09-26 08-46-29.mkv",
+                                    id: 14,
+                                    contents: undefined,
+                              },
+
+                        ]
                   }
             ]
       },
@@ -81,35 +154,27 @@ function DeleteFolderRecursively(folders: Folder[], idToRemove: number): Folder[
           .filter(f => f.id !== idToRemove)
           .map(f => ({
                 ...f,
-                contents: f.contents ? DeleteFolderRecursively(f.contents, idToRemove) : undefined
-          }))
+                contents: f.contents ? DeleteFolderRecursively(f.contents, idToRemove) : f.contents
+          }));
 }
 
 function App() {
-      const [selectedIds, setSelectedIds] = useState(new Set<number>());
       const [folders, setFolders] = useState<Folder[]>(foldersInitial);
       const [idIterator, setIdIterator] = useState(6);
       const [isModalOpen, setIsModalOpen] = useState(false);
       const [actionMethod, setActionMethod] = useState<ActionMethod>(ActionMethod.Add);
-      const [expandedFolderIds, setExpandedFolderIds] = useState<Set<number>>(new Set<number>);
-
-      const handleSelect = (id: number) => {
-            setSelectedIds(prev => {
-                  const newSet = new Set(prev);
-                  if (newSet.has(id)) {
-                        newSet.delete(id);
-                  } else {
-                        newSet.add(id);
-                  }
-                  return newSet;
-            });
-      };
+      const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+      const [expandedFolderIds, setExpandedFolderIds] = useState<Set<number>>(new Set());
 
       const handleRemove = () => {
-            selectedIds.forEach((id) => {
-                  setFolders(prev => DeleteFolderRecursively(prev, id));
-                  selectedIds.delete(id);
-            })
+            setFolders(prev => {
+                  let updated = prev;
+                  selectedIds.forEach((id) => {
+                        updated = DeleteFolderRecursively(updated, id);
+                  });
+                  return updated;
+            });
+            setSelectedIds(new Set());
       }
 
       const toggleModalAdd = () => {
@@ -130,44 +195,49 @@ function App() {
 
       const addNewFolder = (id: number) => {
             if (id === undefined) {
-                  folders.push({
-                        id: idIterator,
-                        contents: undefined,
-                        name: inputString
-                  })
-                  setFolders(folders);
-                  setIdIterator(prev => prev+1);
+                  setFolders(prevFolders => {
+                        const newFolder = {
+                              id: idIterator,
+                              contents: undefined,
+                              name: inputString
+                        };
+                        return [...prevFolders, newFolder];
+                  });
+                  setIdIterator(prev => prev + 1);
                   toggleModalAdd();
                   return;
             }
 
-            const elementToAppend = GetFolderRecursively(folders, id);
-            if (elementToAppend) {
-                  if (elementToAppend.contents){
-                        elementToAppend.contents.push({
+            setFolders(prevFolders => {
+                  const elementToAppend = GetFolderRecursively(prevFolders, id);
+                  if (elementToAppend) {
+                        const newFolder = {
                               id: idIterator,
                               contents: undefined,
                               name: inputString
-                        })
-                  } else {
-                        elementToAppend.contents = [{
-                              id: idIterator,
-                              contents: undefined,
-                              name: inputString
-                        }]
+                        };
+                        if (elementToAppend.contents) {
+                              elementToAppend.contents = [...elementToAppend.contents, newFolder];
+                        } else {
+                              elementToAppend.contents = [newFolder];
+                        }
+                        return [...prevFolders];
                   }
-                  setFolders(folders);
-                  setIdIterator(prev => prev+1);
-                  toggleModalAdd();
-            }
+                  return prevFolders;
+            });
+            setIdIterator(prev => prev + 1);
+            toggleModalAdd();
       };
 
       const editFolder = (id: number) => {
-            const elementToEdit = GetFolderRecursively(folders, id);
-            if (elementToEdit) {
-                  elementToEdit.name = inputString;
-            }
-            setFolders(folders);
+            setFolders(prevFolders => {
+                  return prevFolders.map(folder => {
+                        if (folder.id === id) {
+                              return { ...folder, name: inputString };
+                        }
+                        return folder;
+                  });
+            });
             toggleModalAdd();
       }
 
@@ -183,7 +253,23 @@ function App() {
             }
       }
 
-      const toggleFolderExpansion = (idToToggle: number) => {
+      const toggleSelect = (idToToggle: number) => {
+            setSelectedIds(prev => {
+                  const newSet = new Set(prev);
+                  if (newSet.has(idToToggle)) {
+                        newSet.delete(idToToggle);
+                  } else {
+                        newSet.add(idToToggle);
+                  }
+                  return newSet;
+            });
+      };
+
+      useEffect(() => {
+            console.log('selectedIds updated:', Array.from(selectedIds));
+      }, [selectedIds]);
+
+      const toggleExpanded = (idToToggle: number) => {
             setExpandedFolderIds(prev => {
                   const newSet = new Set(prev);
                   if (newSet.has(idToToggle)) {
@@ -195,28 +281,37 @@ function App() {
             })
       }
 
-      const handleReset = () => {
-            expandedFolderIds.forEach((id) => {toggleFolderExpansion(id)});
-      }
+      const unselectAll = () => {
+            setSelectedIds(new Set<number>());
+      };
 
+      const handleReset = () => {
+            setExpandedFolderIds(new Set<number>());
+            unselectAll();
+      }
 
       return (
           <>
-                <Modal inputValue={inputString} onInputChange={onInputChange} onSave={onSave} isOpen={isModalOpen} setIsOpen={setIsModalOpen} />
-                <ul className={"tree"}>
-                      {folders.map((folder: Folder) => (
-                          <Folder folder={folder} handleSelect={handleSelect} key={folder.id} setExpanded={toggleFolderExpansion} expandedFolderIds={expandedFolderIds} />
-                      ))}
-                </ul>
-                <div className={"buttons-div"}>
-                      <button onClick={toggleModalAdd}
-                              className={(selectedIds.size === 1 || selectedIds.size === 0) ? ("my-btn") : ("my-inactive-btn my-btn")}>Add
-                      </button>
-                      <button onClick={handleRemove} className={"my-btn"}>Remove</button>
-                      <button onClick={toggleModalEdit}
-                              className={selectedIds.size === 1 ? ("my-btn") : ("my-inactive-btn my-btn")}>Edit
-                      </button>
-                      <button onClick={handleReset} className={"my-btn"}>Reset</button>
+                <Modal inputValue={inputString} onInputChange={onInputChange} onSave={onSave} isOpen={isModalOpen}
+                       setIsOpen={setIsModalOpen}/>
+                <div className="background-div">
+                      <ul className={"tree"}>
+                            {folders.map((folder: Folder) => (
+                                <Folder folder={folder} key={folder.id} handleSelect={toggleSelect}
+                                        selectedIds={selectedIds} setExpanded={toggleExpanded}
+                                        expandedFolderIds={expandedFolderIds}/>
+                            ))}
+                      </ul>
+                      <div className={"buttons-div"}>
+                            <button onClick={toggleModalAdd}
+                                    className={(selectedIds.size === 1 || selectedIds.size === 0) ? ("btn btn-outline-dark") : ("btn btn-outline-dark my-inactive-btn")}>Add
+                            </button>
+                            <button onClick={handleRemove} className={"btn btn-outline-dark"}>Remove</button>
+                            <button onClick={toggleModalEdit}
+                                    className={selectedIds.size === 1 ? ("btn btn-outline-dark") : ("btn btn-outline-dark my-inactive-btn")}>Edit
+                            </button>
+                            <button onClick={handleReset} className={"btn btn-outline-dark"}>Reset</button>
+                      </div>
                 </div>
           </>
       )
@@ -228,9 +323,8 @@ function Folder(props: FolderProps) {
             props.setExpanded(props.folder.id);
       }
 
-      const [isSelected, setSelected] = useState<boolean>(false);
+      const isSelected = props.selectedIds.has(props.folder.id);
       const select = () => {
-            setSelected(!isSelected);
             props.handleSelect(props.folder.id);
       }
 
@@ -256,7 +350,7 @@ function Folder(props: FolderProps) {
                 {isExpanded && (
                     <ul>
                           {props.folder.contents?.map(folder => (
-                              <Folder folder={folder} handleSelect={props.handleSelect} key={folder.id} setExpanded={props.setExpanded} expandedFolderIds={props.expandedFolderIds} />
+                              <Folder folder={folder} key={folder.id} handleSelect={props.handleSelect} selectedIds={props.selectedIds} setExpanded={props.setExpanded} expandedFolderIds={props.expandedFolderIds} />
                           ))}
                     </ul>
                 )}
