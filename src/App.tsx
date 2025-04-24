@@ -107,14 +107,20 @@ function App() {
       };
 
       const editFolder = (id: number) => {
-            setFolders(prevFolders => {
-                  return prevFolders.map(folder => {
-                        if (folder.id === id) {
-                              return { ...folder, name: inputString };
-                        }
-                        return folder;
-                  });
-            });
+            // setFolders(prevFolders => {
+            //       return prevFolders.map(folder => {
+            //             if (folder.id === id) {
+            //                   return { ...folder, name: inputString };
+            //             }
+            //             return folder;
+            //       });
+            // });
+            // toggleModalEdit();
+            const elementToEdit = GetFolderRecursively(folders, id);
+            if (elementToEdit) {
+                  elementToEdit.name = inputString;
+            }
+            setFolders(folders);
             toggleModalAdd();
       }
 
