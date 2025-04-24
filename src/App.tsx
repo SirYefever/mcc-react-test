@@ -12,6 +12,13 @@ type Folder = {
       contents?: Folder[];
 }
 
+type FolderProps = {
+      folder: Folder;
+      handleSelect: (id: number) => void;
+      setExpanded: (id: number) => void;
+      expandedFolderIds: Set<number>;
+}
+
 enum ActionMethod {
       Add,
       Edit
@@ -22,13 +29,13 @@ const foldersInitial: Folder[] = [
             id: 0,
             name: "Pictures",
             contents: [{
-                  id: 3,
+                  id: 1,
                   name: "2010s",
                   contents: [{
-                        id: 1,
+                        id: 2,
                         name: "2011s",
                         contents: [{
-                              id: 2,
+                              id: 3,
                               name: "2012s",
                               contents: []
                         }]
@@ -84,6 +91,7 @@ function App() {
       const [idIterator, setIdIterator] = useState(6);
       const [isModalOpen, setIsModalOpen] = useState(false);
       const [actionMethod, setActionMethod] = useState<ActionMethod>(ActionMethod.Add);
+      const [expandedFolderIds, setExpandedFolderIds] = useState<Set<number>>(new Set<number>);
 
       const handleSelect = (id: number) => {
             setSelectedIds(prev => {
@@ -100,6 +108,7 @@ function App() {
       const handleRemove = () => {
             selectedIds.forEach((id) => {
                   setFolders(prev => DeleteFolderRecursively(prev, id));
+                  selectedIds.delete(id);
             })
       }
 
@@ -174,8 +183,20 @@ function App() {
             }
       }
 
-      const handleReset = () => {
+      const toggleFolderExpansion = (idToToggle: number) => {
+            setExpandedFolderIds(prev => {
+                  const newSet = new Set(prev);
+                  if (newSet.has(idToToggle)) {
+                        newSet.delete(idToToggle);
+                  } else {
+                        newSet.add(idToToggle);
+                  }
+                  return newSet;
+            })
+      }
 
+      const handleReset = () => {
+            expandedFolderIds.forEach((id) => {toggleFolderExpansion(id)});
       }
 
 
@@ -184,7 +205,7 @@ function App() {
                 <Modal inputValue={inputString} onInputChange={onInputChange} onSave={onSave} isOpen={isModalOpen} setIsOpen={setIsModalOpen} />
                 <ul className={"tree"}>
                       {folders.map((folder: Folder) => (
-                          <Folder folder={folder} handleSelect={handleSelect} key={folder.id} />
+                          <Folder folder={folder} handleSelect={handleSelect} key={folder.id} setExpanded={toggleFolderExpansion} expandedFolderIds={expandedFolderIds} />
                       ))}
                 </ul>
                 <div className={"buttons-div"}>
@@ -201,20 +222,22 @@ function App() {
       )
 }
 
-function Folder({folder, handleSelect}: { folder: Folder, handleSelect: (id: number) => void }) {
-      const [isExpanded, setExpanded] = useState(false);
-      const expand = () => setExpanded(!isExpanded);
+function Folder(props: FolderProps) {
+      const isExpanded = props.expandedFolderIds.has(props.folder.id);
+      const expand = () => {
+            props.setExpanded(props.folder.id);
+      }
 
-      const [isSelected, setSelected] = useState(false);
+      const [isSelected, setSelected] = useState<boolean>(false);
       const select = () => {
             setSelected(!isSelected);
-            handleSelect(folder.id);
+            props.handleSelect(props.folder.id);
       }
 
       return (
           <li className={"tree-node"} >
                 <span className={ isSelected ? ("selected-node-span") : ("node-span")} >
-                      {folder.contents ? (
+                      {props.folder.contents ? (
                           <>
                                 <button className={"my-btn"} onClick={expand}>
                                       {isExpanded ? (
@@ -228,12 +251,12 @@ function Folder({folder, handleSelect}: { folder: Folder, handleSelect: (id: num
                       ) : (
                           <img alt={"🗎"} src={fileIco} className={"folder-ico"}/>
                       )}
-                      <p className={"file-name"} onClick={select}>{folder.name}</p>
+                      <p className={"file-name"} onClick={select}>{props.folder.name}</p>
           </span>
                 {isExpanded && (
                     <ul>
-                          {folder.contents?.map(folder => (
-                              <Folder folder={folder} handleSelect={handleSelect} key={folder.id} />
+                          {props.folder.contents?.map(folder => (
+                              <Folder folder={folder} handleSelect={props.handleSelect} key={folder.id} setExpanded={props.setExpanded} expandedFolderIds={props.expandedFolderIds} />
                           ))}
                     </ul>
                 )}
